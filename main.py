@@ -9,6 +9,7 @@ import logging
 from datasets import Dataset
 from utils import preprocess_inputs
 
+os.environ["TOKENIZERS_PARALLELISM"] = "true"
 
 logging.basicConfig(
     level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s'
