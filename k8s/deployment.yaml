@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gradio-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gradio
+  template:
+    metadata:
+      labels:
+        app: gradio
+    spec:
+      containers:
+        - name: gradio
+          image: gradio-app
+          env:
+            - name: MODEL
+              value: "DmitrySharonov/bert_tiny2_nexign"
+            - name: DEVICE
+              value: "cpu"
+            - name: GRADIO_HOST
+              value: "0.0.0.0"
+            - name: GRADIO_PORT
+              value: 8080
+            - name: NUM_WORKERS
+              value: 4
+            - name: BATCH_SIZE
+              value: 32
+            - name: MAX_LENGTH
+              value: 512
+            - name: GRADIO_THREADS
+              value: 40
+            - name: GRADIO_QUEUE_MAX_SIZE
+              value: 20
+            - name: DEBUG
+              value: false
+          ports:
+            - containerPort: 8080
+          resources:
+            limits:
+              cpu: "4"
+              memory: "4Gi"
+            requests:
+              cpu: "2"
+              memory: "2Gi"
