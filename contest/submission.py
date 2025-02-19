@@ -50,6 +50,6 @@ def process_csv(input_csv: str, output_csv: str):
 
 if __name__ == "__main__":
     load_model()
-    input_csv = "example_input.csv"
-    output_csv = "submission.csv"
+    input_csv = "contest/data.csv"
+    output_csv = "contest/submission.csv"
     process_csv(input_csv, output_csv)
