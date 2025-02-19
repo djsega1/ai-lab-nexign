@@ -3,19 +3,33 @@ import os
 import gradio as gr
 import pandas as pd
 import concurrent.futures
+from threading import RLock
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import logging
 from datasets import Dataset
+from bs4 import BeautifulSoup
 from utils import preprocess_inputs
 
 logging.basicConfig(
     level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-labels = ['negative', 'neutral', 'positive']
 
-model: str = os.getenv('MODEL', 'DmitrySharonov/bert_tiny2_nexign')
+def remove_html(text):
+    return BeautifulSoup(text, "html.parser").get_text()
+
+
+label_mapping = {
+    "B": "negative",
+    "N": "neutral",
+    "G": "positive"
+}
+label_to_id = {"negative": 0, "neutral": 1, "positive": 2}
+id_to_label = {0: "negative", 1: "neutral", 2: "positive"}
+
+model: str = os.getenv('MODEL', 'DmitrySharonov/mini_test_bert')
+tokenizer: str = os.getenv('TOKENIZER', 'DmitrySharonov/mini_test_bert')
 device: str = os.getenv('DEVICE', 'cpu')
 tokenizer = None
 
@@ -25,17 +39,15 @@ MAX_LENGTH: int = int(os.getenv('MAX_LENGTH', 512))
 GRADIO_SERVER_NAME: str = os.getenv('GRADIO_SERVER_NAME', '0.0.0.0')
 GRADIO_SERVER_PORT: int = int(os.getenv('GRADIO_PORT', 8080))
 GRADIO_THREADS: int = int(os.getenv('GRADIO_THREADS', 40))
-GRADIO_QUEUE_MAX_SIZE: int = int(os.getenv('GRADIO_QUEUE_MAX_SIZE', 20))
+GRADIO_QUEUE_MAX_SIZE: int = int(os.getenv('GRADIO_QUEUE_MAX_SIZE', 50))
 DEBUG: bool = os.getenv('DEBUG', False)
-
-executor = concurrent.futures.ThreadPoolExecutor(max_workers=NUM_WORKERS)
 
 
 def load_model():
     global tokenizer, model, device
     try:
-        tokenizer = AutoTokenizer.from_pretrained('DmitrySharonov/bert_tiny2_nexign')
-        model = AutoModelForSequenceClassification.from_pretrained(model)
+        tokenizer = AutoTokenizer.from_pretrained(model)
+        model = AutoModelForSequenceClassification.from_pretrained(model, num_labels=3)
         model.eval()
         device = torch.device(device)
         model.to(device)
@@ -46,7 +58,7 @@ def load_model():
 
 
 def blocking_predict(
-    model, device, df: pd.DataFrame, tokenized_dataset: Dataset
+    model, device, df: pd.DataFrame, tokenized_dataset: Dataset,
 ) -> str:
     try:
         inputs = {
@@ -66,13 +78,6 @@ def blocking_predict(
         ]  # Берем только вероятность позитивного класса
         positive_percent = (df['positive_prob'].mean() * 100).round(2)
 
-        # Очистка памяти
-        del inputs, outputs
-        if device.type == 'cuda':
-            torch.cuda.empty_cache()
-        elif device.type == 'mps':
-            torch.mps.empty_cache()
-
         result_text = f'Общий позитивный тон: {positive_percent}%\n\n' + '\n'.join(
             f'{row['text']} → Позитивность: {row['positive_prob']:.2%} '
             f'{'🔵' if row['positive_prob'] > 0.7 else '🟢' if row['positive_prob'] > 0.4 else '🟡' if row['positive_prob'] > 0.2 else '🔴'}'
@@ -80,8 +85,8 @@ def blocking_predict(
         )
 
         # Сохранение результатов
-        output_path = 'results.xlsx'
-        df.to_excel(output_path, index=False)
+        output_path = 'results.csv'
+        df.to_csv(output_path, index=False)
 
         return result_text, output_path
     except Exception as e:
@@ -89,7 +94,7 @@ def blocking_predict(
         raise gr.Error(f'Ошибка обработки: {str(e)}')
 
 
-async def predict(text_input: str, file_input: str):
+def predict(text_input: str, file_input: str):
     logging.info(f'Text for prediction: {text_input}')
     df = preprocess_inputs(text_input, file_input)
     dataset = Dataset.from_pandas(df)
@@ -104,11 +109,10 @@ async def predict(text_input: str, file_input: str):
         )
 
     tokenized_dataset = dataset.map(tokenize_fn, batched=True, batch_size=BATCH_SIZE)
-    loop = asyncio.get_running_loop()
+    # loop = asyncio.get_running_loop()
     try:
-        result_text, output_path = await loop.run_in_executor(
-            executor, blocking_predict, model, device, df, tokenized_dataset
-        )
+        result_text, output_path = blocking_predict(model, device, df, tokenized_dataset)
+        logging.info(f'Finished prediction for text: {text_input}')
         return result_text, output_path
     except Exception as e:
         logging.error(f'Executor run failed: {e}')

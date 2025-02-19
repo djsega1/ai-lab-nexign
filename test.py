@@ -8,7 +8,8 @@ async def test(data):
             'http://127.0.0.1:8080/gradio_api/call/predict',
             json={
                 "data": [
-                    str(data)
+                    str(data),
+                    None
                 ]
             }
         ) as resp:

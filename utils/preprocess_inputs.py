@@ -9,8 +9,8 @@ def preprocess_inputs(text_input: str, file_input: str) -> pd.DataFrame:
     # Обработка Excel файла
     if file_input:
         try:
-            df = pd.read_excel(file_input)
-            text_col = next(col for col in df.columns if "text" in col.lower())
+            df = pd.read_csv(file_input, sep=';', encoding='utf-8')
+            text_col = 'MessageText'
             texts.extend(df[text_col].astype(str).tolist())
         except Exception as e:
             logging.error(f"File processing error: {str(e)}")
