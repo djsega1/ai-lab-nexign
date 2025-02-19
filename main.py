@@ -9,8 +9,6 @@ import logging
 from datasets import Dataset
 from utils import preprocess_inputs
 
-os.environ["TOKENIZERS_PARALLELISM"] = "true"
-
 logging.basicConfig(
     level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s'
 )
@@ -33,7 +31,7 @@ DEBUG: bool = os.getenv('DEBUG', False)
 executor = concurrent.futures.ThreadPoolExecutor(max_workers=NUM_WORKERS)
 
 
-async def load_model():
+def load_model():
     global tokenizer, model, device
     try:
         tokenizer = AutoTokenizer.from_pretrained('DmitrySharonov/bert_tiny2_nexign')
@@ -151,7 +149,7 @@ with gr.Blocks(theme=gr.themes.Soft(), title='Анализатор тональ�
         inputs=[text_input, file_input],
         outputs=[output_text, download_btn],
         api_name='predict',
-        concurrency_limit=4,  # Устанавливаем лимит параллельных запросов здесь
+        concurrency_limit=NUM_WORKERS,  # Устанавливаем лимит параллельных запросов здесь
     )
 
     clear_btn.click(
@@ -165,7 +163,7 @@ app.queue(max_size=GRADIO_QUEUE_MAX_SIZE, api_open=False)
 
 
 async def main():
-    await load_model()
+    load_model()
     app.launch(
         server_name=GRADIO_SERVER_NAME,
         server_port=GRADIO_SERVER_PORT,
