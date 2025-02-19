@@ -32,7 +32,7 @@ DEBUG: bool = os.getenv('DEBUG', False)
 executor = concurrent.futures.ProcessPoolExecutor(max_workers=NUM_WORKERS)
 
 
-def load_model():
+async def load_model():
     global tokenizer, model, device
     try:
         tokenizer = AutoTokenizer.from_pretrained('DmitrySharonov/bert_tiny2_nexign')
@@ -164,7 +164,7 @@ app.queue(max_size=GRADIO_QUEUE_MAX_SIZE, api_open=False)
 
 
 async def main():
-    load_model()
+    await load_model()
     app.launch(
         server_name=GRADIO_SERVER_NAME,
         server_port=GRADIO_SERVER_PORT,
