@@ -2,22 +2,15 @@ import asyncio
 import os
 import gradio as gr
 import pandas as pd
-import concurrent.futures
-from threading import RLock
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import logging
 from datasets import Dataset
-from bs4 import BeautifulSoup
 from utils import preprocess_inputs
 
 logging.basicConfig(
     level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s'
 )
-
-
-def remove_html(text):
-    return BeautifulSoup(text, "html.parser").get_text()
 
 
 label_mapping = {
