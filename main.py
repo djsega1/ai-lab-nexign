@@ -50,37 +50,27 @@ def load_model():
         raise e
 
 
-def blocking_predict(
-    model, device, df: pd.DataFrame, tokenized_dataset: Dataset,
-) -> str:
+def blocking_predict(model, device, df: pd.DataFrame, tokenized_dataset: Dataset) -> str:
     try:
         inputs = {
             'input_ids': torch.tensor(tokenized_dataset['input_ids']).to(device),
-            'attention_mask': torch.tensor(tokenized_dataset['attention_mask']).to(
-                device
-            ),
+            'attention_mask': torch.tensor(tokenized_dataset['attention_mask']).to(device),
         }
-
+        
         with torch.no_grad():
             outputs = model(**inputs).logits
-            probabilities = torch.softmax(outputs.float(), dim=1).cpu().numpy()
-
-        # Постобработка с прямым использованием вероятностей
-        df['positive_prob'] = probabilities[
-            :, 1
-        ]  # Берем только вероятность позитивного класса
-        positive_percent = (df['positive_prob'].mean() * 100).round(2)
-
-        result_text = f'Общий позитивный тон: {positive_percent}%\n\n' + '\n'.join(
-            f'{row['text']} → Позитивность: {row['positive_prob']:.2%} '
-            f'{'🔵' if row['positive_prob'] > 0.7 else '🟢' if row['positive_prob'] > 0.4 else '🟡' if row['positive_prob'] > 0.2 else '🔴'}'
+            predicted_ids = torch.argmax(outputs, dim=1).cpu().numpy()
+        
+        df['predicted_label'] = [id_to_label.get(int(pred), "unknown") for pred in predicted_ids]
+        
+        result_text = '\n'.join(
+            f"{row['text']} → Предсказанная метка: {row['predicted_label']}"
             for _, row in df.iterrows()
         )
-
-        # Сохранение результатов
+        
         output_path = 'results.csv'
         df.to_csv(output_path, index=False)
-
+        
         return result_text, output_path
     except Exception as e:
         logging.error(f'Prediction error: {str(e)}')
