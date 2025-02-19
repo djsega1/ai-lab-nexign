@@ -23,8 +23,8 @@ tokenizer = None
 NUM_WORKERS: int = os.getenv('NUM_WORKERS', 4)
 BATCH_SIZE: int = os.getenv('BATCH_SIZE', 32)
 MAX_LENGTH: int = os.getenv('MAX_LENGTH', 512)
-GRADIO_HOST: str = os.getenv('GRADIO_HOST', '0.0.0.0')
-GRADIO_PORT: int = os.getenv('GRADIO_PORT', 8080)
+GRADIO_SERVER_NAME: str = os.getenv('GRADIO_SERVER_NAME', '0.0.0.0')
+GRADIO_SERVER_PORT: int = os.getenv('GRADIO_PORT', 8080)
 GRADIO_THREADS: int = os.getenv('GRADIO_THREADS', 40)
 GRADIO_QUEUE_MAX_SIZE: int = os.getenv('GRADIO_QUEUE_MAX_SIZE', 20)
 DEBUG: bool = os.getenv('DEBUG', False)
@@ -166,8 +166,8 @@ app.queue(max_size=GRADIO_QUEUE_MAX_SIZE, api_open=False)
 async def main():
     load_model()
     app.launch(
-        server_name=GRADIO_HOST,
-        server_port=GRADIO_PORT,
+        server_name=GRADIO_SERVER_NAME,
+        server_port=GRADIO_SERVER_PORT,
         debug=DEBUG,
         max_threads=GRADIO_THREADS,
         show_error=True,
