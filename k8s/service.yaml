@@ -7,6 +7,6 @@ spec:
     app: gradio
   ports:
     - protocol: TCP
-      port: 8080
-      targetPort: 8080
-  type: NodePort
+      port: 80 # Внешний порт, через который будет доступно приложение
+      targetPort: 8080 # Порт внутри подов
+  type: LoadBalancer
