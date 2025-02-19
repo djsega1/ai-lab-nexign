@@ -15,6 +15,7 @@ spec:
       containers:
         - name: gradio
           image: gradio-app
+          imagePullPolicy: Never
           env:
             - name: MODEL
               value: "DmitrySharonov/bert_tiny2_nexign"
