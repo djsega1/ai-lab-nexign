@@ -42,16 +42,16 @@ def predict(text_input: str) -> str:
 
 
 def process_csv(input_csv: str, output_csv: str):
-    df = pd.read_csv(input_csv, sep=';')
+    df = pd.read_csv(input_csv, sep=',')
     
     df["Class"] = df["MessageText"].astype(str).apply(predict)  # Применяем предсказание
     result_df = df[["UserSenderId", "Class"]]  # Оставляем только нужные колонки
-    result_df.to_csv(output_csv, index=False)  # Сохраняем в CSV
+    result_df.to_csv(output_csv, sep=',', index=False)  # Сохраняем в CSV
     logging.info(f"Результаты сохранены в {output_csv}")
 
 # Основной блок
 if __name__ == "__main__":
     load_model()
-    input_csv = "data.csv"  # Укажи путь к входному CSV
+    input_csv = "example_input.csv"  # Укажи путь к входному CSV
     output_csv = "submission.csv"  # Укажи путь к выходному CSV
     process_csv(input_csv, output_csv)
