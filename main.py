@@ -30,7 +30,7 @@ GRADIO_THREADS: int = int(os.getenv('GRADIO_THREADS', 40))
 GRADIO_QUEUE_MAX_SIZE: int = int(os.getenv('GRADIO_QUEUE_MAX_SIZE', 20))
 DEBUG: bool = os.getenv('DEBUG', False)
 
-executor = concurrent.futures.ProcessPoolExecutor(max_workers=NUM_WORKERS)
+executor = concurrent.futures.ThreadPoolExecutor(max_workers=NUM_WORKERS)
 
 
 async def load_model():
